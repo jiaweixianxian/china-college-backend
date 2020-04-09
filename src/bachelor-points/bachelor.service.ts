@@ -9,36 +9,36 @@ import { CreateBachelorPointsDto } from './dto/create-bachelor.dto';
 export class BachelorService {
   constructor(
     @InjectRepository(BachelorPoints)
-    private createBachelorPointsDto: Repository<BachelorPoints>,
+    private bachelorRepository: Repository<BachelorPoints>,
   ) {
   }
 
   create(createBachelorPointsDto: CreateBachelorPointsDto): Promise<BachelorPoints> {
-    return this.createBachelorPointsDto.save(createBachelorPointsDto);
+    return this.bachelorRepository.save(createBachelorPointsDto);
   }
 
   async update(id,createBachelorPointsDto: CreateBachelorPointsDto):Promise<void>{
     await this.checkCollegeExist(id);
-    await this.createBachelorPointsDto.update(id,createBachelorPointsDto);
+    await this.bachelorRepository.update(id,createBachelorPointsDto);
   }
 
   findAll(): Promise<BachelorPoints[]> {
-    return this.createBachelorPointsDto.find();
+    return this.bachelorRepository.find();
   }
 
   async findOne(id: string): Promise<BachelorPoints> {
     await this.checkCollegeExist(id);
-    return this.createBachelorPointsDto.findOne(id);
+    return this.bachelorRepository.findOne(id);
   }
 
   async remove(id: string): Promise<void> {
     await this.checkCollegeExist(id);
-    await this.createBachelorPointsDto.delete(id);
+    await this.bachelorRepository.delete(id);
   }
 
   async checkCollegeExist(collegeId){
     try {
-      await this.createBachelorPointsDto.findOneOrFail(collegeId);
+      await this.bachelorRepository.findOneOrFail(collegeId);
     }
     catch (e) {
       throw new HttpException({
