@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post ,Put} from '@nestjs/common';
 import { CollegeService } from './college.service';
-import { CreateCollegeDto } from './dto/create-college.dto';
 import { College } from './college.entity';
 
 @Controller('college')
@@ -9,8 +8,8 @@ export class CollegeController {
   }
 
   @Post()
-  create(@Body() createCollegeDto:CreateCollegeDto ): Promise<College> {
-    return this.collegeService.create(createCollegeDto);
+  create(@Body() createCollege:College ): Promise<College> {
+    return this.collegeService.create(createCollege);
   }
 
   @Get()
@@ -24,8 +23,8 @@ export class CollegeController {
   }
 
   @Put(":id")
-  update(@Param('id') id: string, @Body() createCollegeDto:CreateCollegeDto) :Promise<void>{
-    return this.collegeService.update(id,createCollegeDto);
+  update(@Param('id') id: string, @Body() updateCollege:College) :Promise<void>{
+    return this.collegeService.update(id,updateCollege);
   }
 
   @Delete(':id')
