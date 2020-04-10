@@ -17,7 +17,7 @@ export class CollegeController {
     return this.collegeService.findAll();
   }
 
-  @Get(':id')
+  @Get('detail/:id')
   findOne(@Param('id') id: string): Promise<College> {
     return this.collegeService.findOne(id);
   }
@@ -30,6 +30,11 @@ export class CollegeController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
     return this.collegeService.remove(id);
+  }
+
+  @Get('reptile')
+  reptile() {
+    return this.collegeService.reptile();
   }
 
 }
