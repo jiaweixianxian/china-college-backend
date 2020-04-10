@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export class College{
+export class College {
 
   @PrimaryGeneratedColumn()
   id: number;
@@ -9,31 +9,42 @@ export class College{
   @Column()
   name: string;
 
-  @Column('text')
-  des:string;
+  @Column()
+  created_year: string;
 
   @Column()
-  create_ts: string;
-
-  @Column()
-  type:string;
+  type: string;
 
   @Column()
   tag: string;
 
   @Column()
-  schoolfellow:string;
+  schoolfellow: string;
 
   @Column()
-  department:string;
+  department: string;
 
   @Column()
-  website:string;
+  website: string;
 
   @Column('int')
-  code:number;
+  code: number;
 
   @Column()
-  motto:string;
+  motto: string;
+
+  @Column({
+    nullable: true
+  })
+  create_ts: string;
+
+  @Column({
+    nullable: true
+  })
+  update_ts: string;
+
+
+  @Column('text')
+  des: string;
 
 }
