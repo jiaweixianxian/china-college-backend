@@ -7,14 +7,16 @@ export class CollegeController {
   constructor(private readonly collegeService: CollegeService) {
   }
 
-  @Post()
+  @Post('create')
   create(@Body() createCollege:College ): Promise<College> {
     return this.collegeService.create(createCollege);
   }
 
-  @Get()
-  findAll(): Promise<College[]> {
-    return this.collegeService.findAll();
+  @Post('list')
+  findAll(@Body() condition:Object): Promise<College[]> {
+    console.log(condition);
+    
+    return this.collegeService.findAll(condition);
   }
 
   @Get('detail/:id')
@@ -32,9 +34,9 @@ export class CollegeController {
     return this.collegeService.remove(id);
   }
 
-  @Get('reptile')
-  reptile() {
-    return this.collegeService.reptile();
+  @Post('crawler/:province')
+  reptile(@Param('province') province: string) {
+    return this.collegeService.crawlerCollegeaNameByProvince(province);
   }
 
 }

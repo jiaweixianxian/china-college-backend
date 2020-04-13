@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { CollegeModule } from './college/college.module';
 import { BachelorPointsModule } from './bachelor-points/backelor.module';
 import { MasterPointsModule } from './master-points/master.module';
+import { ProvinceModule } from './province-data/province-data.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -18,7 +19,7 @@ import { MasterPointsModule } from './master-points/master.module';
       autoLoadEntities: true,
       synchronize:true
     }),
-    UsersModule,CollegeModule,BachelorPointsModule,MasterPointsModule
+    UsersModule,CollegeModule,BachelorPointsModule,MasterPointsModule,ProvinceModule
   ],
   controllers: [AppController],
   providers: [AppService],

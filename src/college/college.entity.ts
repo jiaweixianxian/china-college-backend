@@ -9,29 +9,61 @@ export class College {
   @Column()
   name: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    type: 'float'
+  })
   created_year: string;
 
-  @Column()
+  @Column({
+    nullable: true
+  })
   type: string;
 
-  @Column()
-  tag: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+    type: 'simple-array'
+  })
+  tags: string[];
+
+
+  @Column({
+    nullable: true,
+    type: 'simple-array'
+  })
   schoolfellow: string;
 
-  @Column()
+  @Column({
+    nullable: true
+  })
   department: string;
 
-  @Column()
+  @Column({
+    nullable: true
+  })
   website: string;
 
-  @Column('int')
+  @Column({
+    nullable: true,
+    type: 'double'
+  })
   code: number;
 
-  @Column()
+  @Column({
+    nullable: true
+  })
   motto: string;
+
+  @Column({
+    nullable: true
+  })
+  location: string;
+
+  @Column({
+    nullable: true
+  })
+  province_abbr: string;
 
   @Column({
     nullable: true
@@ -44,7 +76,12 @@ export class College {
   update_ts: string;
 
 
-  @Column('text')
+  @Column({
+    nullable: true,
+    type: 'text'
+  })
   des: string;
+
+
 
 }

@@ -19,12 +19,15 @@ export class CollegeService {
   }
 
   async update(id, updateCollege: College): Promise<void> {
+    delete updateCollege.id;
     updateCollege.update_ts = moment().format('YYYY-MM-DD HH:mm:ss');
     await this.collegeRepository.update(id, updateCollege);
   }
 
-  findAll(): Promise<College[]> {
-    return this.collegeRepository.find();
+  findAll(condition:Object): Promise<College[]> {
+    return this.collegeRepository.find({
+      where:condition
+    });
   }
 
   async findOne(id: string): Promise<College> {
@@ -37,7 +40,7 @@ export class CollegeService {
     await this.collegeRepository.delete(id);
   }
 
-  async checkCollegeExist(collegeId):Promise<void> {
+  async checkCollegeExist(collegeId): Promise<void> {
     try {
       await this.collegeRepository.findOneOrFail(collegeId);
     }
@@ -49,90 +52,47 @@ export class CollegeService {
     }
   }
 
-  async reptile(){
-    const result=await this.list();
-    console.log(result);
-    
-     return await this.list();
-  }
-
-  async list() {
+  async crawlerCollegeaNameByProvince(province) {
 
     const a = () => {
-      return new Promise(function (reslove, reject) {
+      return new Promise( (reslove, reject) =>{
         var c = new Crawler({
           maxConnections: 10,
           // This will be called for each crawled page
-          callback: function (error, res, done) {
+          callback:  (error, res, done)=> {
             if (error) {
               console.log(error);
               reject(error)
             } else {
               var $ = res.$;
               let items = [];
-              $('.scores_List').find('dl').each(async function (idx, element) {
+              $('.table-x').find('tbody').find('tr').each(async (idx, element) =>{
+                if(idx===0||idx===1){return;}
                 var $element = $(element);
-
-                let location= $element.find('dd').find('ul').find('li').first().text();
-                let website=$element.find('dd').find('ul').find('li').last().text();
-                let college={
-                  logo_url:$element.find('dt').find('a').find('img').attr('src'),
-                  name:$element.find('dt').find('strong').text(),
-                  location:location.split(/[, ， 、 ; ：\s+]/)[1],
-                  website:website.split(/[, ， 、 ; ：\s+]/)[1],
+                let college = {
+                  name: $element.find('td').eq(1).text(),
+                  code: Number($element.find('td').eq(2).text()),
+                  department: $element.find('td').eq(3).text(),
+                  location: $element.find('td').eq(4).text(),
+                  province_abbr:province,
+                  create_ts:moment().format('YYYY-MM-DD HH:mm:ss')
                 }
-                if(idx===0){
-                  let resultFromBaidu=await detail(encodeURIComponent(college.name));
-                  Object.assign(college,resultFromBaidu);
-                }
+                await this.collegeRepository.save(college);
                 items.push(college);
               });
 
-              console.log(items);
-              
               reslove(items);
             }
             done();
           }
         });
-        c.queue('http://college.gaokao.com/schlist/a1/p1');
+        c.queue(`https://daxue.eol.cn/${province}.shtml`);
 
       })
     };
 
-    const detail=(collegeName)=>{
-       return new Promise( (resolve:Function,reject:Function) =>{
-        const queryBaidu=new Crawler({
-          maxConnections: 10,
-          callback: function (error, res, done) {
-            if (error) {
-              console.log(error);
-              reject(error)
-            } else {
-              var $ = res.$;
-              let item= {};
-              var $element = $('.basicInfo-left');
-
-              item={
-                created_year:$element.find('dd').eq('3').text(),
-                type:$element.find('dd').eq('4').text(),
-                department:$element.find('dd').eq('7').text(),
-
-              };
-             
-
-              console.log(item);
-              
-              resolve(item);
-            }
-            done();
-          }
-        });
-        queryBaidu.queue(`https://baike.baidu.com/item/${collegeName}`);
-       });
-
-    };
-    return  await a()
+  
+    return await a()
   }
 
 
