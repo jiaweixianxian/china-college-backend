@@ -11,9 +11,8 @@ export class College {
 
   @Column({
     nullable: true,
-    type: 'float'
   })
-  created_year: string;
+  createdYear: string;
 
   @Column({
     nullable: true
@@ -27,12 +26,17 @@ export class College {
   })
   tags: string[];
 
+  @Column({
+    nullable: true
+  })
+  category: string;
+
 
   @Column({
     nullable: true,
     type: 'simple-array'
   })
-  schoolfellow: string;
+  schoolFellow: string;
 
   @Column({
     nullable: true
@@ -46,9 +50,8 @@ export class College {
 
   @Column({
     nullable: true,
-    type: 'double'
   })
-  code: number;
+  code: string;
 
   @Column({
     nullable: true
@@ -63,7 +66,7 @@ export class College {
   @Column({
     nullable: true
   })
-  province_abbr: string;
+  provinceAbbr: string;
 
   @Column({
     nullable: true

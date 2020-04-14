@@ -14,8 +14,6 @@ export class CollegeController {
 
   @Post('list')
   findAll(@Body() condition:Object): Promise<College[]> {
-    console.log(condition);
-    
     return this.collegeService.findAll(condition);
   }
 
@@ -34,9 +32,14 @@ export class CollegeController {
     return this.collegeService.remove(id);
   }
 
-  @Post('crawler/:province')
-  reptile(@Param('province') province: string) {
+  @Post('crawlerCollegeList')
+  reptile(@Body('province') province: string) {
     return this.collegeService.crawlerCollegeaNameByProvince(province);
+  }
+
+  @Post('crawlerCollegeInfo')
+  crawlerCollegeInfo(@Body('collegeName') collegeName: string){
+    return this.collegeService.crawlerCollegeInfo(collegeName);
   }
 
 }
