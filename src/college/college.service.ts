@@ -5,6 +5,8 @@ import { College } from './college.entity';
 import * as moment from 'moment';
 import * as Crawler from 'crawler';
 import { ParamCrawler } from './param-crawler.enum';
+import { resolve } from 'dns';
+import { async } from 'rxjs/internal/scheduler/async';
 
 
 @Injectable()
@@ -66,7 +68,7 @@ export class CollegeService {
             } else {
               var $ = res.$;
               let items = [];
-              $('.table-x').find('tbody').find('tr').each(async (idx, element) => {
+               $('.table-x').find('tbody').find('tr').each(async (idx, element) => {
                 if (idx === 0 || idx === 1) { return; }
                 var $element = $(element);
                 let collegeListInfo = {
@@ -75,11 +77,10 @@ export class CollegeService {
                   provinceAbbr: province,
                   create_ts: moment().format('YYYY-MM-DD HH:mm:ss')
                 }
-                let basicInfo = await this.crawlerCollegeInfo(collegeListInfo.name);
-                const college = Object.assign(collegeListInfo, basicInfo);
-                await this.collegeRepository.save(college);
-                items.push(college);
+                await this.collegeRepository.save(collegeListInfo);
+                items.push(collegeListInfo);
               });
+              console.log(items.length);
               reslove(items);
             }
             done();
@@ -91,20 +92,26 @@ export class CollegeService {
     return await a();
   }
 
-  async crawlerCollegeInfo(collegeName) {
-    const crawlerFun = (collegeName: String) => {
+
+  async crawlerCollegeInfo() {
+    const crawlerFun = (name,id) => {
       return new Promise((reslove, reject) => {
         var c = new Crawler({
-          maxConnections: 10,
+          rateLimit: 4000,
+          maxConnections: 1,
           callback: (error, res, done) => {
             if (error) {
               reject(error)
             } else {
               const $ = res.$;
-              let collegeBasicInfo: College = new College;
+              let collegeBasicInfo: College = new College();
               $('.lemma-summary').find('.para').each((index, element) => {
                 const $element = $(element);
-                collegeBasicInfo.des = collegeBasicInfo.des + $element.text() + '\n';
+                if(collegeBasicInfo.des){
+                  collegeBasicInfo.des = $element.text() + '\n';
+                }else{
+                  collegeBasicInfo.des = collegeBasicInfo.des + $element.text() + '\n';
+                }
               });
               collegeBasicInfo.website = $('.baseBox').find('.dl-baseinfo').last().find('dl').last().find('dd').find('a').text();
               let allParamsElement = $('.basic-info').find('dt');
@@ -142,7 +149,7 @@ export class CollegeService {
         });
         c.queue(
           {
-            uri: `https://baike.baidu.com/item/${collegeName}`,
+            uri: `https://baike.baidu.com/item/${name}`,
             headers: {
               'accept-encoding': 'br'
             }
@@ -150,8 +157,12 @@ export class CollegeService {
         );
       })
     };
-    return await crawlerFun(encodeURIComponent(collegeName));
 
+    let response=await this.collegeRepository.find();
+    response.forEach(async (item)=>{
+      let basicInfo= await crawlerFun(encodeURIComponent(item.name),item.id);
+      await this.collegeRepository.update(item.id, basicInfo);
+    })
   }
 
 

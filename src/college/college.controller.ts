@@ -38,8 +38,8 @@ export class CollegeController {
   }
 
   @Post('crawlerCollegeInfo')
-  crawlerCollegeInfo(@Body('collegeName') collegeName: string){
-    return this.collegeService.crawlerCollegeInfo(collegeName);
+  crawlerCollegeInfo(){
+    return this.collegeService.crawlerCollegeInfo();
   }
 
 }
