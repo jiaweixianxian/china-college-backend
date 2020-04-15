@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { College } from './college.entity';
 import * as moment from 'moment';
 import * as Crawler from 'crawler';
+import { ParamCrawler } from './param-crawler.enum';
+import { resolve } from 'dns';
+import { async } from 'rxjs/internal/scheduler/async';
+
 
 @Injectable()
 export class CollegeService {
@@ -19,12 +23,15 @@ export class CollegeService {
   }
 
   async update(id, updateCollege: College): Promise<void> {
+    delete updateCollege.id;
     updateCollege.update_ts = moment().format('YYYY-MM-DD HH:mm:ss');
     await this.collegeRepository.update(id, updateCollege);
   }
 
-  findAll(): Promise<College[]> {
-    return this.collegeRepository.find();
+  findAll(condition: Object): Promise<College[]> {
+    return this.collegeRepository.find({
+      where: condition
+    });
   }
 
   async findOne(id: string): Promise<College> {
@@ -37,7 +44,7 @@ export class CollegeService {
     await this.collegeRepository.delete(id);
   }
 
-  async checkCollegeExist(collegeId):Promise<void> {
+  async checkCollegeExist(collegeId): Promise<void> {
     try {
       await this.collegeRepository.findOneOrFail(collegeId);
     }
@@ -49,90 +56,113 @@ export class CollegeService {
     }
   }
 
-  async reptile(){
-    const result=await this.list();
-    console.log(result);
-    
-     return await this.list();
-  }
-
-  async list() {
-
+  async crawlerCollegeaNameByProvince(province) {
     const a = () => {
-      return new Promise(function (reslove, reject) {
+      return new Promise((reslove, reject) => {
         var c = new Crawler({
           maxConnections: 10,
-          // This will be called for each crawled page
-          callback: function (error, res, done) {
+          callback: (error, res, done) => {
             if (error) {
               console.log(error);
               reject(error)
             } else {
               var $ = res.$;
               let items = [];
-              $('.scores_List').find('dl').each(async function (idx, element) {
+               $('.table-x').find('tbody').find('tr').each(async (idx, element) => {
+                if (idx === 0 || idx === 1) { return; }
                 var $element = $(element);
-
-                let location= $element.find('dd').find('ul').find('li').first().text();
-                let website=$element.find('dd').find('ul').find('li').last().text();
-                let college={
-                  logo_url:$element.find('dt').find('a').find('img').attr('src'),
-                  name:$element.find('dt').find('strong').text(),
-                  location:location.split(/[, ， 、 ; ：\s+]/)[1],
-                  website:website.split(/[, ， 、 ; ：\s+]/)[1],
+                let collegeListInfo = {
+                  name: $element.find('td').eq(1).text(),
+                  location: $element.find('td').eq(4).text(),
+                  provinceAbbr: province,
+                  create_ts: moment().format('YYYY-MM-DD HH:mm:ss')
                 }
-                if(idx===0){
-                  let resultFromBaidu=await detail(encodeURIComponent(college.name));
-                  Object.assign(college,resultFromBaidu);
-                }
-                items.push(college);
+                await this.collegeRepository.save(collegeListInfo);
+                items.push(collegeListInfo);
               });
-
-              console.log(items);
-              
+              console.log(items.length);
               reslove(items);
             }
             done();
           }
         });
-        c.queue('http://college.gaokao.com/schlist/a1/p1');
-
+        c.queue(`https://daxue.eol.cn/${province}.shtml`);
       })
     };
+    return await a();
+  }
 
-    const detail=(collegeName)=>{
-       return new Promise( (resolve:Function,reject:Function) =>{
-        const queryBaidu=new Crawler({
-          maxConnections: 10,
-          callback: function (error, res, done) {
+
+  async crawlerCollegeInfo() {
+    const crawlerFun = (name,id) => {
+      return new Promise((reslove, reject) => {
+        var c = new Crawler({
+          rateLimit: 4000,
+          maxConnections: 1,
+          callback: (error, res, done) => {
             if (error) {
-              console.log(error);
               reject(error)
             } else {
-              var $ = res.$;
-              let item= {};
-              var $element = $('.basicInfo-left');
-
-              item={
-                created_year:$element.find('dd').eq('3').text(),
-                type:$element.find('dd').eq('4').text(),
-                department:$element.find('dd').eq('7').text(),
-
-              };
-             
-
-              console.log(item);
-              
-              resolve(item);
+              const $ = res.$;
+              let collegeBasicInfo: College = new College();
+              $('.lemma-summary').find('.para').each((index, element) => {
+                const $element = $(element);
+                if(collegeBasicInfo.des){
+                  collegeBasicInfo.des = $element.text() + '\n';
+                }else{
+                  collegeBasicInfo.des = collegeBasicInfo.des + $element.text() + '\n';
+                }
+              });
+              collegeBasicInfo.website = $('.baseBox').find('.dl-baseinfo').last().find('dl').last().find('dd').find('a').text();
+              let allParamsElement = $('.basic-info').find('dt');
+              allParamsElement.each((index, element) => {
+                const $element = $(element);
+                const labelTitle = $element.text().replace(/\s+/g, "");
+                for (const key in ParamCrawler) {
+                  if (labelTitle === ParamCrawler[key]) {
+                    if (key === 'createdYear') {
+                      collegeBasicInfo.createdYear = $element.next().text().substr(0,5);
+                    } else if (key === 'tags') {
+                      let originTags = $element.next().text();
+                      originTags = originTags.replace(new RegExp(/收起/, 'gi'), "");
+                      if (originTags.charAt(0) == "\n") originTags = originTags.substr(1);
+                      if (originTags.charAt(originTags.length - 1) == "\n") originTags = originTags.substr(0, originTags.length - 2);
+                      originTags = originTags.replace(new RegExp('\n\n', 'gi'), '\n');
+                      collegeBasicInfo[key] = originTags.replace(new RegExp('\n', 'gi'), ',');
+                    } else if (key === 'schoolFellow') {
+                      let originTags = $element.next().text();
+                      originTags = originTags.replace(new RegExp('、', 'gi'), ",");
+                      let index = originTags.indexOf('等');
+                      originTags = originTags.substr(0, index);
+                      collegeBasicInfo[key] = originTags.replace(/[\r\n]/g, "");
+                    }
+                    else {
+                      collegeBasicInfo[key] = $element.next().text().replace(/[\r\n]/g, "");
+                    }
+                  }
+                }
+              })
+              reslove(collegeBasicInfo);
             }
             done();
           }
         });
-        queryBaidu.queue(`https://baike.baidu.com/item/${collegeName}`);
-       });
-
+        c.queue(
+          {
+            uri: `https://baike.baidu.com/item/${name}`,
+            headers: {
+              'accept-encoding': 'br'
+            }
+          }
+        );
+      })
     };
-    return  await a()
+
+    let response=await this.collegeRepository.find();
+    response.forEach(async (item)=>{
+      let basicInfo= await crawlerFun(encodeURIComponent(item.name),item.id);
+      await this.collegeRepository.update(item.id, basicInfo);
+    })
   }
 
 
